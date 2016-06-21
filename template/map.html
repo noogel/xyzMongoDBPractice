@@ -5,76 +5,119 @@
     <title>MongoDB数据库练习</title>
     <link href="/static/css/bootstrap.css" rel="stylesheet">
     <link href="/static/css/bootstrap-theme.css" rel="stylesheet">
-    <link href="/static/css/non-responsive.css" rel="stylesheet">
+    <link href="/static/css/dashboard.css" rel="stylesheet">
     <script src="/static/js/jquery-3.0.0.js" type="text/javascript"></script>
     <link href="/static/js/bootstrap.js" rel="stylesheet">
+
+    <link rel="stylesheet" href="http://cache.amap.com/lbs/static/main1119.css"/>
+    <script src="http://cache.amap.com/lbs/static/es5.min.js"></script>
+    <script src="http://webapi.amap.com/maps?v=1.3&key=6f9d498e92302b8ce756ef8ded01aeb3"></script>
+    <script type="text/javascript" src="http://cache.amap.com/lbs/static/addToolbar.js"></script>
+
 </head>
 <body>
-<!-- Fixed navbar -->
 <nav class="navbar navbar-inverse navbar-fixed-top">
-    <div class="container">
-        <div class="navbar-header">
-            <!-- The mobile navbar-toggle button can be safely removed since you do not need it in a non-responsive implementation -->
-            <a class="navbar-brand" href="#">MongoDB数据库练习</a>
-        </div>
-        <!-- Note that the .navbar-collapse and .collapse classes have been removed from the #navbar -->
-        <div id="navbar">
-            <ul class="nav navbar-nav">
-                <li><a href="#">主页</a></li>
-                <li class="active"><a href="/map">地图</a></li>
-                <li><a href="#">关于</a></li>
-            </ul>
-            <form class="navbar-form navbar-left" role="search">
-                <div class="form-group">
-                    <input type="text" class="form-control" placeholder="Search">
-                </div>
-                <button type="submit" class="btn btn-default">提交</button>
-            </form>
-        </div>
-        <!--/.nav-collapse -->
+    <div class="navbar-header">
+        <!-- The mobile navbar-toggle button can be safely removed since you do not need it in a non-responsive implementation -->
+        <a class="navbar-brand" href="#">MongoDB数据库练习</a>
+    </div>
+    <!-- Note that the .navbar-collapse and .collapse classes have been removed from the #navbar -->
+    <div id="navbar">
+        <ul class="nav navbar-nav">
+            <li><a href="#">主页</a></li>
+            <li class="active"><a href="/map">地图</a></li>
+            <li><a href="#">关于</a></li>
+        </ul>
+        <form class="navbar-form navbar-left" role="search">
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="Search">
+            </div>
+            <button type="submit" class="btn btn-default">提交</button>
+        </form>
     </div>
 </nav>
 
-<div class="container">
-
-    <div class="page-header">
-        <h1>一个采用MongoDB存储数据的地图练手项目</h1>
-
-        <p class="lead">Noogel创建于2016年6月</p>
-    </div>
-
-    <h3>What changes</h3>
-
-    <p>Note the lack of the <code>&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;</code>,
-        which disables the zooming aspect of sites in mobile devices. In addition, we reset our container's width and
-        changed the navbar to prevent collapsing, and are basically good to go.</p>
-
-    <h3>Regarding navbars</h3>
-
-    <p>As a heads up, the navbar component is rather tricky here in that the styles for displaying it are rather
-        specific and detailed. Overrides to ensure desktop styles display are not as performant or sleek as one would
-        like. Just be aware there may be potential gotchas as you build on top of this example when using the
-        navbar.</p>
-
-    <h3>Browsers, scrolling, and fixed elements</h3>
-
-    <p>Non-responsive layouts highlight a key drawback to fixed elements. <strong class="text-danger">Any fixed
-        component, such as a fixed navbar, will not be scrollable when the viewport becomes narrower than the page
-        content.</strong> In other words, given the non-responsive container width of 970px and a viewport of 800px,
-        you'll potentially hide 170px of content.</p>
-
-    <p>There is no way around this as it's default browser behavior. The only solution is a responsive layout or using a
-        non-fixed element.</p>
-
-    <h3>Non-responsive grid system</h3>
-
+<div class="container-fluid">
     <div class="row">
-        <div class="col-xs-4">One third</div>
-        <div class="col-xs-4">One third</div>
-        <div class="col-xs-4">One third</div>
-    </div>
+        <div class="col-sm-3 col-md-2 sidebar">
+            <ul class="nav nav-sidebar">
+                <li class="active"><a href="#">Overview <span class="sr-only">(current)</span></a></li>
+                <li><a href="#">Reports</a></li>
+                <li><a href="#">Analytics</a></li>
+                <li><a href="#">Export</a></li>
+            </ul>
+            <ul class="nav nav-sidebar">
+                <li><a href="">Nav item</a></li>
+                <li><a href="">Nav item again</a></li>
+                <li><a href="">One more nav</a></li>
+                <li><a href="">Another nav item</a></li>
+                <li><a href="">More navigation</a></li>
+            </ul>
+            <ul class="nav nav-sidebar">
+                <li><a href="">Nav item again</a></li>
+                <li><a href="">One more nav</a></li>
+                <li><a href="">Another nav item</a></li>
+            </ul>
+        </div>
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            <div style="height: 580px;">
+                <div id="container"></div>
+                <script>
+                    var marker, map = new AMap.Map('container', {
+                        resizeEnable: true,
+                        zoom: 15,
+                        center: [91.132212,29.660361]
 
+                    });
+
+                    var contextMenu = new AMap.ContextMenu();  //创建右键菜单
+                        //右键放大
+                        contextMenu.addItem("放大一级", function() {
+                            map.zoomIn();
+                        }, 0);
+                        //右键缩小
+                        contextMenu.addItem("缩小一级", function() {
+                            map.zoomOut();
+                        }, 1);
+                        //右键显示全国范围
+                        contextMenu.addItem("缩放至全市范围", function(e) {
+                            map.setZoomAndCenter(10, [91.132212,29.660361]);
+                        }, 2);
+                        //右键添加Marker标记
+                        contextMenu.addItem("添加标记", function(e) {
+                            var new_marker = new AMap.Marker({
+                                map: map,
+                                position: contextMenuPositon, //基点位置
+                                draggable: true,
+                                cursor: 'move',
+                                raiseOnDrag: true
+                            });
+                            new_marker.setLabel({
+                                offset: new AMap.Pixel(20, 20),//修改label相对于maker的位置
+                                content: contextMenuPositon,
+                            });
+
+                            marker = new_marker;
+                        }, 3);
+                        // 删除marker标记
+                        contextMenu.addItem("删除最新标记", function(e) {
+                            alert(contextMenuPositon);
+                            if(marker){
+                                marker.setMap(null);
+                                marker = null;
+                            }
+                        }, 4);
+
+                        //地图绑定鼠标右击事件——弹出右键菜单
+                        map.on('rightclick', function(e) {
+                            contextMenu.open(map, e.lnglat);
+                            contextMenuPositon = e.lnglat;
+                        });
+
+                </script>
+            </div>
+        </div>
+    </div>
 </div>
-<!-- /container -->
 </body>
 </html>
