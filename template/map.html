@@ -40,24 +40,15 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-sm-3 col-md-2 sidebar">
-            <ul class="nav nav-sidebar">
-                <li class="active"><a href="#">Overview <span class="sr-only">(current)</span></a></li>
-                <li><a href="#">Reports</a></li>
-                <li><a href="#">Analytics</a></li>
-                <li><a href="#">Export</a></li>
+            <ul id="db_point" class="nav nav-sidebar">
             </ul>
-            <ul class="nav nav-sidebar">
-                <li><a href="">Nav item</a></li>
-                <li><a href="">Nav item again</a></li>
-                <li><a href="">One more nav</a></li>
-                <li><a href="">Another nav item</a></li>
-                <li><a href="">More navigation</a></li>
-            </ul>
-            <ul class="nav nav-sidebar">
-                <li><a href="">Nav item again</a></li>
-                <li><a href="">One more nav</a></li>
-                <li><a href="">Another nav item</a></li>
-            </ul>
+            <!--<ul class="nav nav-sidebar">-->
+                <!--<li><a href="">Nav item</a></li>-->
+                <!--<li><a href="">Nav item again</a></li>-->
+                <!--<li><a href="">One more nav</a></li>-->
+                <!--<li><a href="">Another nav item</a></li>-->
+                <!--<li><a href="">More navigation</a></li>-->
+            <!--</ul>-->
         </div>
         <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
             <div style="height: 580px;">
@@ -85,19 +76,8 @@
                         }, 2);
                         //右键添加Marker标记
                         contextMenu.addItem("添加标记", function(e) {
-                            var new_marker = new AMap.Marker({
-                                map: map,
-                                position: contextMenuPositon, //基点位置
-                                draggable: true,
-                                cursor: 'move',
-                                raiseOnDrag: true
-                            });
-                            new_marker.setLabel({
-                                offset: new AMap.Pixel(20, 20),//修改label相对于maker的位置
-                                content: contextMenuPositon,
-                            });
-
-                            marker = new_marker;
+                            set_point();
+                            ajax_data("insert_point", "point=" + contextMenuPositon);
                         }, 3);
                         // 删除marker标记
                         contextMenu.addItem("删除最新标记", function(e) {
@@ -114,6 +94,70 @@
                             contextMenuPositon = e.lnglat;
                         });
 
+                    function set_point(){
+                        var new_marker = new AMap.Marker({
+                            map: map,
+                            position: contextMenuPositon //基点位置
+                        });
+                        new_marker.setLabel({
+                            offset: new AMap.Pixel(20, 20),//修改label相对于maker的位置
+                            content: contextMenuPositon
+                        });
+                        var point = contextMenuPositon.toString().split(",");
+                        var x_point = point[0];
+                        var y_point = point[1];
+                        $("#db_point").append("<li><a href=\"javascript:;\" x=\"" + x_point + "\" y=\"" + y_point + "\" onclick=\"set_center(this)\">"+ x_point + "," + y_point +"</a><span><a href=\"javascript:;\" onclick=\"remove_point(this)\" x=\"" + x_point + "\" y=\"" + y_point + "\" >删除</a></span></li>")
+                    }
+
+                    function remove_point(obj){
+                        var x = $(obj).attr("x");
+                        var y = $(obj).attr("y");
+                        ajax_data("remove_point", "x_point="+x+"&y_point="+y);
+                        $(obj).parents("li").remove()
+                    }
+
+                    function ajax_data(url, data){
+                        $.ajax({
+                           type: "POST",
+                           url: "/map/" + url,
+                           data: data,
+                           success: function(resp){
+                               resp = JSON.parse(resp);
+                               if (resp.code == 300) {
+                                   alert(resp.msg);
+                               }
+                           }
+                        });
+                    }
+
+                    function set_center(obj){
+                        var x = $(obj).attr("x");
+                        var y = $(obj).attr("y");
+                        map.setZoomAndCenter(15, [x, y]);
+                    }
+
+                    $(document).ready(function(){
+                        $.ajax({
+                           type: "POST",
+                           url: "/map/find_point",
+                           success: function(resp){
+                               resp = JSON.parse(resp);
+                               if (resp.code == 200) {
+                                   var db_point = resp.body.data;
+                                   for (index in db_point){
+                                       new AMap.Marker({
+                                           map: map,
+                                           position: [db_point[index].x, db_point[index].y]
+                                       }).setLabel({
+                                           offset: new AMap.Pixel(20, 20),//修改label相对于maker的位置
+                                           content: db_point[index].x + "," + db_point[index].y
+                                       });
+                                       $("#db_point").append("<li><a href=\"javascript:;\" x=\"" + db_point[index].x + "\" y=\"" + db_point[index].y + "\" onclick=\"set_center(this)\">"+ db_point[index].x + "," + db_point[index].y +"</a><span><a href=\"javascript:;\" onclick=\"remove_point(this)\" x=\"" + db_point[index].x + "\" y=\"" + db_point[index].y + "\" >删除</a></span></li>")
+                                   }
+                               }
+                           }
+                        });
+                    })
                 </script>
             </div>
         </div>

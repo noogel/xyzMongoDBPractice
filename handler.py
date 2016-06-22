@@ -112,8 +112,10 @@ class MapHandler(BaseHandler):
         remove
         :return:
         """
-        m_id = self.get_argument("m_id", "")
-        self.db.point.remove({"_id": ObjectId(m_id)})
+        # m_id = self.get_argument("m_id", "")
+        x_point = self.get_argument("x_point", "")
+        y_point = self.get_argument("y_point", "")
+        self.db.point.remove({"x": float(x_point), "y": float(y_point)})
         return self.ajax_ok()
 
     def update_point(self):
@@ -139,5 +141,15 @@ class MapHandler(BaseHandler):
         if x_point and y_point:
             find_dict["x"] = float(x_point)
             find_dict["y"] = float(y_point)
-        result = self.db.point.find(find_dict)
-        return self.ajax_ok(body=result)
+        count = self.db.point.find(find_dict).count()
+        result = [{"_id": str(val["_id"]), "x": val["x"], "y": val["y"]} for val in self.db.point.find(find_dict)]
+        body = {"count": count, "data": result}
+        return self.ajax_ok(body=body)
+
+    def point_indexes(self):
+        """
+        point_indexes
+        :return:
+        """
+        indexes = self.db.point.indexes.find()
+        return self.ajax_ok(body=indexes)
