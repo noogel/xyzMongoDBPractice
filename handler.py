@@ -118,13 +118,25 @@ class MapHandler(BaseHandler):
         self.db.point.remove({"x": float(x_point), "y": float(y_point)})
         return self.ajax_ok()
 
+    def update_point_ui(self):
+        """
+        update_point_ui
+        :return:
+        """
+        x_point = self.get_argument("x_point", "")
+        y_point = self.get_argument("y_point", "")
+        point = self.db.point.find_one({"x": float(x_point), "y": float(y_point)})
+        point["_id"] = str(point["_id"])
+        self.render("update_point_ui.html", point=point)
+
     def update_point(self):
         """
         update
         :return:
         """
         m_id = self.set_argument("m_id", "")
-        x_point, y_point = self.get_argument("point", "").split(",")
+        x_point = self.get_argument("x_point", "")
+        y_point = self.get_argument("y_point", "")
         self.db.point.update({"_id": ObjectId(m_id)}, {"$set", {"x": float(x_point), "y": float(y_point)}})
         return self.ajax_ok()
 
