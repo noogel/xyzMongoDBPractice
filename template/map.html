@@ -39,20 +39,24 @@
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-sm-3 col-md-2 sidebar">
-            <ul class="nav nav-sidebar">
-                <li><a href="/" data-toggle="modal" data-target="#d_modal">Small modal</a></li>
+        <div class="col-sm-3 col-md-3 sidebar">
+            <ul id="db_info" class="nav nav-sidebar">
+                <li><a id="find_near" style="display: none;" href="javascript:;" data-toggle="modal" data-target="#d_modal"></a></li>
+                <li><a id="find_within" style="display: none;" href="javascript:;" data-toggle="modal" data-target="#d_modal"></a></li>
+                <li><a href="/map/distinct_x_ui" data-toggle="modal" data-target="#d_modal">X轴坐标去重列表</a></li>
+                <li><a href="/map/group_ui" data-toggle="modal" data-target="#d_modal">X轴坐标分类统计</a></li>
+                <li><a href="/map/map_reduce_ui" data-toggle="modal" data-target="#d_modal">X轴Map/Reduce练习</a></li>
             </ul>
             <ul id="db_point" class="nav nav-sidebar">
             </ul>
         </div>
-        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+        <div class="col-sm-9 col-sm-offset-3 col-md-9 col-md-offset-3 main">
             <div style="height: 580px;">
                 <div id="container"></div>
                 <script>
                     var marker, map = new AMap.Map('container', {
                         resizeEnable: true,
-                        zoom: 15,
+                        zoom: 14,
                         center: [91.132212,29.660361]
 
                     });
@@ -83,6 +87,14 @@
                                 marker = null;
                             }
                         }, 4);
+                        // 查询最近点
+                        contextMenu.addItem("查询最近点", function(e) {
+                            find_near(contextMenuPositon);
+                        }, 5);
+                        // 查询半径内点
+                        contextMenu.addItem("查询半径内点", function(e) {
+                            find_within(contextMenuPositon);
+                        }, 5);
 
                         //地图绑定鼠标右击事件——弹出右键菜单
                         map.on('rightclick', function(e) {
@@ -139,6 +151,18 @@
                         map.setZoomAndCenter(15, [x, y]);
                     }
 
+                    function find_near(point){
+                        var $obj = $("#find_near");
+                        $obj.attr("href", "/map/find_near_ui?point=" + point);
+                        $obj.click();
+                    }
+
+                    function find_within(point){
+                        var $obj = $("#find_within");
+                        $obj.attr("href", "/map/find_within_ui?point=" + point);
+                        $obj.click();
+                    }
+
                     $(document).ready(function(){
                         $.ajax({
                            type: "POST",
@@ -156,7 +180,9 @@
                                            content: db_point[index].x + "," + db_point[index].y
                                        });
                                        $("#db_point").append("<li><a href=\"javascript:;\" x=\"" + db_point[index].x + "\" y=\"" + db_point[index].y + "\" onclick=\"set_center(this)\">"+ db_point[index].x + "," + db_point[index].y +"</a><span><a href=\"/map/update_point_ui?x_point=" + db_point[index].x + "&y_point=" + db_point[index].y + "\" data-toggle=\"modal\" data-target=\"#d_modal\">更新</a></span><span><a href=\"javascript:;\" onclick=\"remove_point(this)\" x=\"" + db_point[index].x + "\" y=\"" + db_point[index].y + "\" >删除</a></span></li>");
-                                   }
+                                   };
+                                   var db_count = resp.body.count;
+                                   $("#db_info").append("<li><a href='javascript:;'>当前共标记"+db_count+"个点</a></li>");
                                }
                            }
                         });
@@ -173,6 +199,10 @@
     </div>
   </div>
 </div>
-
+<script type="text/javascript">
+    $("#d_modal").on("hidden.bs.modal", function () {
+        $(this).removeData("bs.modal");
+    });
+</script>
 </body>
 </html>

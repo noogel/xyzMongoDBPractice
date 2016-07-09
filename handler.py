@@ -6,12 +6,11 @@
 """
 __author__ = 'root'
 
-
-import ujson as json
 import logging
 
 import tornado
-from bson import ObjectId
+import ujson as json
+from bson import ObjectId, Code
 
 from lib.mongoclient import MongoClient
 
@@ -104,7 +103,10 @@ class MapHandler(BaseHandler):
         :return:
         """
         x_point, y_point = self.get_argument("point", "").split(",")
-        self.db.point.insert({"x": float(x_point), "y": float(y_point)})
+        self.db.point.insert({
+            "x": float(x_point), "y": float(y_point),
+            "local": {'type': "Point", 'coordinates': [float(x_point), float(y_point)]}
+        })
         return self.ajax_ok()
 
     def remove_point(self):
@@ -165,3 +167,118 @@ class MapHandler(BaseHandler):
         """
         indexes = self.db.point.indexes.find()
         return self.ajax_ok(body=indexes)
+
+    def distinct_x_ui(self):
+        """
+        x坐标去重
+        :return:
+        """
+        distinct_x = self.db.point.distinct("x")
+        self.render("distinct_x.html", distinct_x=distinct_x)
+
+    def group_ui(self):
+        """
+        X轴坐标分类统计
+        mongodb client example:
+        db.test.group({key:{age:true},initial:{num:0},$reduce:function(doc,prev){
+            prev.num++
+        },
+        condition:{$where:function(){
+                return this.age>2;
+            }
+            }
+        });
+
+        arguments:
+            initial: 初始对象
+            key: 按其分组的字段
+            reduce: 一个函数，管理如何输出值
+            condition: 相当于where，筛选结果
+        :return:
+        """
+        reducer = Code("""
+            function (doc, prev){
+                prev.num++
+            }
+        """)
+        group = self.db.point.group(
+            key={"x": True},
+            initial={"num": 0},
+            condition={"x": {"$gt": 91}},
+            reduce=reducer
+        )
+        self.render("modal_tpl.html", info=group, title="X轴坐标分类统计")
+
+    def map_reduce_ui(self):
+        """
+        map_reduce_ui
+        map和reduce都是一个javascript的函数； map_reduce 方法会将统计结果保存到一个临时的数据集合中。
+        :return:
+        """
+        mapper = Code("""
+            function () {
+                emit(this.x, 1);
+            }
+        """)
+
+        reducer = Code("""
+            function (key, values) {
+                var total = 0;
+                for (var i = 0; i < values.length; i++) {
+                    total += values[i];
+                }
+                return total;
+            }
+        """)
+
+        result = self.db.point.map_reduce(mapper, reducer, "num").find()
+        result = [val for val in result]
+        self.render("modal_tpl.html", info=result, title="X轴Map/Reduce练习")
+
+    def find_near_ui(self):
+        """
+        地理空间索引查询
+        make index:
+        db.point.ensureIndex({"local.coordinates": "2d"})
+
+        find near point:
+        db.places.find( { loc :
+                            { $near :
+                              { $geometry :
+                                 { type : "Point" ,
+                                   coordinates : [ <longitude> , <latitude> ] } ,
+                                $maxDistance : <distance in meters>
+                         } } } )
+        ps: 这种查询只能在不分片的集合上查询
+        :return:
+        """
+        x_point, y_point = self.get_argument("point", ",").split(",")
+        result = self.db.point.find({
+            "local.coordinates": {
+                '$near': [float(x_point), float(y_point)]
+            }
+        }).limit(5)
+        info = []
+        for item in result:
+            item.pop("_id")
+            info.append(item)
+        self.render("modal_tpl.html", info=info, title="地理空间查询")
+
+    def find_within_ui(self):
+        """
+        半径范围内查询
+        :return:
+        """
+        x_point, y_point = self.get_argument("point", ",").split(",")
+        result = self.db.point.find({
+            "local.coordinates": {
+                '$within': {
+                    "$center": [[float(x_point), float(y_point)], 0.01]
+                }
+            }
+        })
+        info = []
+        for item in result:
+            item.pop("_id")
+            info.append(item)
+        self.render("modal_tpl.html", info=info, title="地理空间查询")
